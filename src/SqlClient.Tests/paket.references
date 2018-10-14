@@ -5,3 +5,4 @@ group Test
 	Newtonsoft.Json
 	xunit
 	xunit.runner.visualstudio
+	Microsoft.SqlServer.Types

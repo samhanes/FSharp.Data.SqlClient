@@ -71,7 +71,7 @@ Target.create "CleanDocs" (fun _ ->
 
 Target.create "Build" (fun _ ->
     files (["SqlClient.sln"])
-    |> MSBuild.runRelease id "" "Rebuild"
+    |> MSBuild.runRelease id "bin" "Restore;Rebuild"
     |> ignore
 )
 
@@ -142,7 +142,7 @@ Target.create "DeployTestDB" (fun _ ->
 
 Target.create "BuildTests" (fun _ ->
     files ["Tests.sln"]
-    |> MSBuild.runReleaseExt id "" ([]) "Rebuild"
+    |> MSBuild.runReleaseExt id "" ([]) "Restore;Rebuild"
     |> ignore
 )
 
