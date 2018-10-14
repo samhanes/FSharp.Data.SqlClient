@@ -296,6 +296,36 @@ type DataTablesTests() =
         // getting value same way as a plain datatable still yields DBNull
         Assert.Equal(DBNull.Value, r.[t.Columns.d] :?> DBNull)
 
+    [<Fact>]
+    member __.``Can use datacolumns GetValue and SetValue methods`` () =
+        let t = (new GetArbitraryDataAsDataTable()).Execute()
+        let r = t.Rows.[0]
+        let a, b, c, d =
+          t.Columns.a.GetValue(r)
+          , t.Columns.b.GetValue(r)
+          , t.Columns.c.GetValue(r)
+          , t.Columns.d.GetValue(r)
+
+        Assert.Equal(r.a, a)
+        Assert.Equal(r.b, b)
+        Assert.Equal(r.c, c)
+        Assert.Equal(r.d, d)
+
+        // need to make column readonly = false in order to use SetValue from the DataColumn
+        t.Columns.a.ReadOnly <- false
+        t.Columns.b.ReadOnly <- false
+        t.Columns.c.ReadOnly <- false
+        t.Columns.d.ReadOnly <- false
+
+        t.Columns.a.SetValue(r, 108)
+        t.Columns.b.SetValue(r, 108)
+        t.Columns.c.SetValue(r, 108)
+        t.Columns.d.SetValue(r, Some 108)
+
+        Assert.Equal(r.a, 108)
+        Assert.Equal(r.b, 108)
+        Assert.Equal(r.c, 108)
+        Assert.Equal(r.d, Some 108)
 
     [<Fact>]
     member __.``Can use DataColumnCollection`` () =
@@ -317,12 +347,21 @@ type DataTablesTests() =
         let products = new AdventureWorks.Production.Tables.Product()
         
         let product = products.NewRow()
-        product.Name <- "foo"
+        
+        // can use SetValue
+        let newName = "foo"
+        products.Columns.Name.SetValue(product, newName)
+        Assert.True(product.Name = newName)
 
         // use as plain DataColumns
         let name = product.[products.Columns.Name] :?> string
         Assert.True(product.Name = name)
-    
+
+        // can use GetValue
+        product.FinishedGoodsFlag <- true
+        let finishedGoodsFlag = products.Columns.FinishedGoodsFlag.GetValue(product)
+        Assert.Equal(product.FinishedGoodsFlag, finishedGoodsFlag)
+
     [<Fact>]
     member __.``Can use Table property on SqlCommandProvider's rows`` () =
         use cmd = new GetArbitraryDataAsDataTable()
@@ -368,3 +407,25 @@ type DataTablesTests() =
 
         Assert.Equal(1, rowsAffected)
     
+    [<Fact>]
+    member __.``can build arbitrary data table from inline sql``() =
+        use table = new SqlCommandProvider<"SELECT 1 a, 2 b", ConnectionStrings.AdventureWorksNamed, ResultType.DataTable>.Table()
+        let r = table.NewRow()
+        table.Columns.a.set_ReadOnly false
+        table.Columns.a.SetValue(r, 2)
+        Assert.Equal(r.a , 2)
+        
+    [<Fact>]
+    member __.``can build arbitrary table and columns exist``() =
+        let t = new GetArbitraryDataAsDataTable.Table()
+        let r = t.NewRow()
+        t.Columns.a.set_ReadOnly false
+        t.Columns.a.SetValue(r, 1)
+        Assert.Equal(r.a , 1)
+               
+    [<Fact>]
+    member __.``can't update on arbitrarilly constructed table``() =
+        let t = new GetArbitraryDataAsDataTable.Table()
+        let e = Assert.Throws(fun () -> t.Update() |> ignore)
+        Assert.Equal<string>("This command wasn't constructed from SqlProgrammabilityProvider, call to Update is not supported.", e.Message)
+       
