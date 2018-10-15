@@ -22,10 +22,27 @@
       <reference file="FSharp.Data.SqlClient.dll" />
     </references>
   </metadata>
+  <dependencies>
+      <group targetFramework=".NETFramework4.6.1"/>
+      <group targetFramework=".NETStandard2.0">
+        <dependency id="NETStandard.Library" version="2.0" />
+        <dependency id="FSharp.Core" version="3.1.2.5" />
+        <dependency id="System.Runtime" version="4.3" />
+        <dependency id="System.Runtime.Loader" version="4.3" />
+        <dependency id="System.Runtime.Serialization.Primitives" version="4.3" />
+        <dependency id="System.Runtime.Serialization.Formatters" version="4.3" />
+        <dependency id="System.IO" version="4.3" />
+        <dependency id="System.Console" version="4.3" />
+        <dependency id="System.Reflection" version="4.3" />
+        <dependency id="System.Reflection.TypeExtensions" version="4.3" />
+        <dependency id="System.Data.SqlClient" version="4.4" />
+        <dependency id="System.Data.Common" version="4.3" />
+        <dependency id="Microsoft.SqlServer.TransactSql.ScriptDom" version="14.0.3811.1" />
+        <dependency id="System.Configuration.ConfigurationManager" version="4.4.1" />
+      </group>
+  </dependencies>
   <files>
-    <file src="..\bin\FSharp.Data.SqlClient.dll" target="lib\net40" />
-    <file src="..\bin\FSharp.Data.SqlClient.pdb" target="lib\net40" />
-    <file src="..\bin\FSharp.Data.SqlClient.xml" target="lib\net40" />
-    <file src="..\bin\Microsoft.SqlServer.TransactSql.ScriptDom.dll" target="lib\net40" />
+    <file src="**/*.dll" exclude="**/net461/FSharp.Core.dll" />
+    <file src="**/*.deps.json" />
   </files>
 </package>
