@@ -2,6 +2,7 @@
 
 open System
 open System.Data
+open System.Data.Common
 open System.Data.SqlClient
 open System.Collections.Generic
 open FSharp.Data.SqlClient
@@ -55,7 +56,6 @@ type DataTable<'T when 'T :> DataRow>(selectCommand: SqlCommand, ?connectionStri
             selectCommand.Connection <- new SqlConnection( connectionString.Value.Value)
 
         use dataAdapter = new SqlDataAdapter(selectCommand)
-        use commandBuilder = new SqlCommandBuilder(dataAdapter) 
         use __ = dataAdapter.RowUpdating.Subscribe(fun args ->
             if  args.Errors = null && args.StatementType = StatementType.Insert
                 && defaultArg batchSize dataAdapter.UpdateBatchSize = 1
@@ -65,7 +65,7 @@ type DataTable<'T when 'T :> DataRow>(selectCommand: SqlCommand, ?connectionStri
                     if c.AutoIncrement  
                         || (c.AllowDBNull && args.Row.IsNull c.Ordinal)
                     then 
-                        columnsToRefresh.Add( "inserted." + commandBuilder.QuoteIdentifier c.ColumnName)
+                        columnsToRefresh.Add( "inserted." + (* commandBuilder.QuoteIdentifier *) c.ColumnName)
 
                 if columnsToRefresh.Count > 0
                 then                        

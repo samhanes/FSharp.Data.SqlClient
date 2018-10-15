@@ -1,6 +1,10 @@
 FSharp.Core
 Microsoft.SqlServer.TransactSql.ScriptDom
 
+System.Configuration.ConfigurationManager
+System.Data.SqlClient
+System.Runtime.Caching
+
 File: ProvidedTypes.fsi .
 File: ProvidedTypes.fs .
 File: ProvidedTypesTesting.fs . 

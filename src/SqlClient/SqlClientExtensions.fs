@@ -11,11 +11,11 @@ open System.Data.SqlClient
 open System.Reflection
 
 type SqlCommand with
-    member this.AsyncExecuteReader behavior =
-        Async.FromBeginEnd((fun(callback, state) -> this.BeginExecuteReader(callback, state, behavior)), this.EndExecuteReader)
+    member this.AsyncExecuteReader (behavior:CommandBehavior) = 
+        Async.AwaitTask(this.ExecuteReaderAsync(behavior))
 
     member this.AsyncExecuteNonQuery() =
-        Async.FromBeginEnd(this.BeginExecuteNonQuery, this.EndExecuteNonQuery) 
+        Async.AwaitTask(this.ExecuteNonQueryAsync())
 
     static member internal DefaultTimeout = (new SqlCommand()).CommandTimeout
 
@@ -69,7 +69,7 @@ type Column = {
             then
                 assert(unitsOfMeasurePerSchema.IsSome)
                 let uomType = unitsOfMeasurePerSchema.Value.[this.TypeInfo.Schema] |> List.find (fun x -> x.Name = this.TypeInfo.UnitOfMeasureName)
-                ProviderImplementation.ProvidedTypes.ProvidedMeasureBuilder.Default.AnnotateType(this.TypeInfo.ClrType, [ uomType ])
+                ProviderImplementation.ProvidedTypes.ProvidedMeasureBuilder.AnnotateType(this.TypeInfo.ClrType, [ uomType ])
             else
                 this.TypeInfo.ClrType
 
@@ -149,7 +149,7 @@ type Parameter = {
         then
             assert(unitsOfMeasurePerSchema.IsSome)
             let uomType = unitsOfMeasurePerSchema.Value.[this.TypeInfo.Schema] |> List.find (fun x -> x.Name = this.TypeInfo.UnitOfMeasureName)
-            ProviderImplementation.ProvidedTypes.ProvidedMeasureBuilder.Default.AnnotateType(this.TypeInfo.ClrType, [ uomType ])
+            ProviderImplementation.ProvidedTypes.ProvidedMeasureBuilder.AnnotateType(this.TypeInfo.ClrType, [ uomType ])
         else
             this.TypeInfo.ClrType
 

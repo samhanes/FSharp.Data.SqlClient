@@ -1,5 +1,7 @@
 ﻿namespace FSharp.Data
 
+#nowarn "101"
+
 open System.IO
 open Microsoft.FSharp.Core.CompilerServices
 open ProviderImplementation.ProvidedTypes
@@ -37,14 +39,14 @@ type SqlFileProvider(config : TypeProviderConfig) =
 
         let typ = 
             lazy 
-                let t = ProvidedTypeDefinition(assembly, nameSpace, typeName, baseType = Some typeof<obj>, HideObjectMethods = true)
+                let t = ProvidedTypeDefinition(assembly, nameSpace, typeName, baseType = Some typeof<obj>, hideObjectMethods = true)
 
                 let content = 
                     if encoding = "" 
                     then File.ReadAllText( fullPath) 
                     else File.ReadAllText( fullPath, encoding = Encoding.GetEncoding( encoding))
 
-                t.AddMember <| ProvidedLiteralField("Text", typeof<string>, content)
+                t.AddMember <| ProvidedField.Literal("Text", typeof<string>, content)
 
                 t
 

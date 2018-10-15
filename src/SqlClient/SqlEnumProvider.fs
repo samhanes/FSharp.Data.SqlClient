@@ -1,5 +1,7 @@
 ﻿namespace FSharp.Data
 
+#nowarn "101"
+
 open System.Reflection
 open System.Collections.Generic
 open System.Data
@@ -7,7 +9,6 @@ open System.Data.Common
 open System
 open System.IO
 open System.Configuration
-open System.Runtime.Caching
 
 open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Quotations
@@ -25,15 +26,15 @@ type SqlEnumKind =
 [<TypeProvider>]
 [<CompilerMessageAttribute("This API supports the FSharp.Data.SqlClient infrastructure and is not intended to be used directly from your code.", 101, IsHidden = true)>]
 type SqlEnumProvider(config : TypeProviderConfig) as this = 
-    inherit TypeProviderForNamespaces()
+    inherit TypeProviderForNamespaces(config)
 
     let nameSpace = this.GetType().Namespace
     let assembly = Assembly.LoadFrom( config.RuntimeAssembly)
-    let providerType = ProvidedTypeDefinition(assembly, nameSpace, "SqlEnumProvider", Some typeof<obj>, HideObjectMethods = true, IsErased = false)
-    let tempAssembly = ProvidedAssembly( Path.ChangeExtension(Path.GetTempFileName(), ".dll"))
+    let providerType = ProvidedTypeDefinition(assembly, nameSpace, "SqlEnumProvider", Some typeof<obj>, hideObjectMethods = true, isErased = false)
+    let tempAssembly = ProvidedAssembly()
     do tempAssembly.AddTypes [providerType]
 
-    let cache = new MemoryCache(name = this.GetType().Name)
+    let cache = new Cache<ProvidedTypeDefinition>()
 
     static let allowedTypesForEnum = 
         HashSet [| 
@@ -44,9 +45,6 @@ type SqlEnumProvider(config : TypeProviderConfig) as this =
         let xs = HashSet [| typeof<float32>; typeof<float>; typeof<bigint>; typeof<decimal>; typeof<string> |]
         xs.UnionWith( allowedTypesForEnum)
         xs
-
-    do 
-        this.Disposing.Add <| fun _ -> cache.Dispose()
 
     do 
         providerType.DefineStaticParameters(
@@ -74,9 +72,9 @@ type SqlEnumProvider(config : TypeProviderConfig) as this =
         this.AddNamespace( nameSpace, [ providerType ])
     
     member internal this.CreateRootType( typeName, query, connectionStringOrName, provider, configFile, kind: SqlEnumKind) = 
-        let tempAssembly = ProvidedAssembly( Path.ChangeExtension(Path.GetTempFileName(), ".dll"))
+        let tempAssembly = ProvidedAssembly()
 
-        let providedEnumType = ProvidedTypeDefinition(assembly, nameSpace, typeName, baseType = Some typeof<obj>, HideObjectMethods = true, IsErased = false)
+        let providedEnumType = ProvidedTypeDefinition(assembly, nameSpace, typeName, baseType = Some typeof<obj>, hideObjectMethods = true, isErased = false)
         tempAssembly.AddTypes [ providedEnumType ]
         
         let connStr, providerName = 
@@ -84,7 +82,7 @@ type SqlEnumProvider(config : TypeProviderConfig) as this =
             | Literal value -> value, provider
             | NameInConfig(_, value, provider) -> value, provider
 
-        let adoObjectsFactory = DbProviderFactories.GetFactory( providerName: string)
+        let adoObjectsFactory = System.Data.SqlClient.SqlClientFactory.Instance
         use conn = adoObjectsFactory.CreateConnection() 
         conn.ConnectionString <- connStr
         conn.Open()
@@ -163,13 +161,13 @@ type SqlEnumProvider(config : TypeProviderConfig) as this =
             providedEnumType.SetEnumUnderlyingType valueType
 
             (names, values)
-            ||> List.map2 (fun name value -> ProvidedLiteralField(name, providedEnumType, fst value))
+            ||> List.map2 (fun name value -> ProvidedField.Literal(name, providedEnumType, fst value))
             |> providedEnumType.AddMembers
 
         | SqlEnumKind.UnitsOfMeasure ->
 
             for name in names do
-                let units = ProvidedTypeDefinition( name, None, IsErased = false)
+                let units = ProvidedTypeDefinition( name, None, isErased = false)
                 units.AddCustomAttribute { 
                     new CustomAttributeData() with
                         member __.Constructor = typeof<MeasureAttribute>.GetConstructor [||]
@@ -183,7 +181,7 @@ type SqlEnumProvider(config : TypeProviderConfig) as this =
                 (names, values) ||> List.map2 (fun name value -> 
                     if allowedTypesForLiteral.Contains valueType
                     then 
-                        ProvidedLiteralField(name, valueType, fst value) :> FieldInfo, <@@ () @@>
+                        ProvidedField.Literal(name, valueType, fst value) :> FieldInfo, <@@ () @@>
                     else
                         let field = ProvidedField( name, valueType)
                         field.SetFieldAttributes( FieldAttributes.Public ||| FieldAttributes.InitOnly ||| FieldAttributes.Static)
@@ -201,12 +199,12 @@ type SqlEnumProvider(config : TypeProviderConfig) as this =
             
             let itemsExpr = Expr.NewArray(itemType, (names, values) ||> List.map2 (fun name value -> Expr.NewTuple([Expr.Value name; snd value ])))
 
-            let typeInit = ProvidedConstructor([], IsTypeInitializer = true)
-            typeInit.InvokeCode <- fun _ -> 
+            let typeInit = ProvidedConstructor([], IsTypeInitializer = true, invokeCode = fun _ -> 
                 Expr.Sequential(
                     Expr.FieldSet(itemsField, Expr.Coerce(itemsExpr, seqType)),
                     setFieldValues |> List.reduce (fun x y -> Expr.Sequential(x, y))
                 )
+            )
 
             providedEnumType.AddMember typeInit 
             
@@ -219,15 +217,14 @@ type SqlEnumProvider(config : TypeProviderConfig) as this =
                             ProvidedParameter("ignoreCase", typeof<bool>) // optional=false 
                         ], 
                         returnType = typedefof<_ option>.MakeGenericType( valueType), 
-                        IsStaticMethod = true
+                        isStatic = true,
+                        invokeCode = fun _ -> 
+                            this.GetType()
+                                .GetMethod( "GetTryParseImpl", BindingFlags.NonPublic ||| BindingFlags.Static)
+                                .MakeGenericMethod( valueType)
+                                .Invoke( null, [| itemsExpr |])
+                                |> unbox
                     )
-
-                tryParse2Arg.InvokeCode <- 
-                    this.GetType()
-                        .GetMethod( "GetTryParseImpl", BindingFlags.NonPublic ||| BindingFlags.Static)
-                        .MakeGenericMethod( valueType)
-                        .Invoke( null, [| itemsExpr |])
-                        |> unbox
 
                 providedEnumType.AddMember tryParse2Arg
 
@@ -238,10 +235,10 @@ type SqlEnumProvider(config : TypeProviderConfig) as this =
                             ProvidedParameter("value", typeof<string>) 
                         ], 
                         returnType = typedefof<_ option>.MakeGenericType( valueType), 
-                        IsStaticMethod = true
+                        isStatic = true,
+                        invokeCode = fun args ->
+                            Expr.Call(tryParse2Arg, [args.[0]; Expr.Value false])
                     )
-
-                tryParse1Arg.InvokeCode <- fun args -> Expr.Call(tryParse2Arg, [args.[0]; Expr.Value false])
 
                 providedEnumType.AddMember tryParse1Arg
 
@@ -261,8 +258,8 @@ type SqlEnumProvider(config : TypeProviderConfig) as this =
                             ProvidedParameter("ignoreCase", typeof<bool>) 
                         ], 
                         returnType = valueType, 
-                        IsStaticMethod = true, 
-                        InvokeCode = parseImpl
+                        isStatic = true, 
+                        invokeCode = parseImpl
                     )
 
                 providedEnumType.AddMember parse2Arg
@@ -274,21 +271,25 @@ type SqlEnumProvider(config : TypeProviderConfig) as this =
                             ProvidedParameter("value", typeof<string>) 
                         ], 
                         returnType = valueType, 
-                        IsStaticMethod = true, 
-                        InvokeCode = fun args -> Expr.Call(parse2Arg, [args.[0]; Expr.Value false])
+                        isStatic = true, 
+                        invokeCode = fun args -> Expr.Call(parse2Arg, [args.[0]; Expr.Value false])
                     )
 
                 providedEnumType.AddMember parse1Arg
 
             do  //TryFindName
-                let tryGetName = ProvidedMethod( methodName = "TryFindName", parameters = [ ProvidedParameter("value", valueType) ], returnType = typeof<string option>, IsStaticMethod = true)
-
-                tryGetName.InvokeCode <- 
-                    this.GetType()
-                        .GetMethod( "GetTryFindName", BindingFlags.NonPublic ||| BindingFlags.Static)
-                        .MakeGenericMethod( valueType)
-                        .Invoke( null, [| itemsExpr |])
-                        |> unbox
+                let tryGetName = 
+                    ProvidedMethod( methodName = "TryFindName", 
+                        parameters = [ ProvidedParameter("value", valueType) ], 
+                        returnType = typeof<string option>, 
+                        isStatic = true,
+                        invokeCode = fun _ ->
+                            this.GetType()
+                                .GetMethod( "GetTryFindName", BindingFlags.NonPublic ||| BindingFlags.Static)
+                                .MakeGenericMethod( valueType)
+                                .Invoke( null, [| itemsExpr |])
+                                |> unbox
+                    )
 
                 providedEnumType.AddMember tryGetName
 

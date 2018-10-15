@@ -42,6 +42,9 @@ let version = release.AssemblyVersion
 let releaseNotes = release.Notes |> String.concat "\n"
 let testDir = "bin"
 
+let install = lazy DotNet.install DotNet.Release_2_1_4
+let inline dnDefault arg = DotNet.Options.lift install.Value arg
+
 // --------------------------------------------------------------------------------------
 // Generate assembly info files with the right version & up-to-date information
 
@@ -57,8 +60,11 @@ Target.create "AssemblyInfo" (fun _ ->
              AssemblyInfo.InternalsVisibleTo "SqlClient.Tests" ] )
 )
 
+let clientSlnPath = "SqlClient.sln"
+
 Target.create "Clean" (fun _ ->
     Shell.cleanDirs ["bin"; "temp"]
+    DotNet.exec dnDefault "clean" clientSlnPath |> ignore
 )
 
 Target.create "CleanDocs" (fun _ ->
@@ -69,10 +75,19 @@ Target.create "CleanDocs" (fun _ ->
 // Build library (builds Visual Studio solution, which builds multiple versions
 // of the runtime library & desktop + Silverlight version of design time library)
 
+// Target.create "Build" (fun _ ->
+//     files (["SqlClient.sln"])
+//     |> MSBuild.runRelease id "bin" "Restore;Rebuild"
+//     |> ignore
+// )
+
 Target.create "Build" (fun _ ->
-    files (["SqlClient.sln"])
-    |> MSBuild.runRelease id "bin" "Restore;Rebuild"
-    |> ignore
+    DotNet.restore 
+        (fun args -> { args with NoCache = true } |> dnDefault)
+        clientSlnPath
+    DotNet.build
+        (fun args -> { args with Configuration = DotNet.Debug; Framework = Some "netstandard2.0" } |> dnDefault)
+        clientSlnPath
 )
 
 #r "System.Data"
@@ -140,10 +155,21 @@ Target.create "DeployTestDB" (fun _ ->
             cmd.ExecuteNonQuery() |> ignore
 )
 
+// Target.create "BuildTests" (fun _ ->
+//     files ["Tests.sln"]
+//     |> MSBuild.runReleaseExt id "" ([]) "Restore;Rebuild"
+//     |> ignore
+// )
+
+let testSlnPath = "Tests.sln"
+
 Target.create "BuildTests" (fun _ ->
-    files ["Tests.sln"]
-    |> MSBuild.runReleaseExt id "" ([]) "Restore;Rebuild"
-    |> ignore
+    DotNet.restore 
+        (fun args -> { args with NoCache = true } |> dnDefault)
+        testSlnPath
+    DotNet.build
+        (fun args -> { args with Configuration = DotNet.Debug } |> dnDefault)
+        testSlnPath
 )
 
 // --------------------------------------------------------------------------------------
@@ -219,10 +245,10 @@ open Fake.Core.TargetOperators // for ==>
 "Clean"
   ==> "AssemblyInfo"
   ==> "Build"
-  ==> "DeployTestDB"
-  ==> "BuildTests"
-  ==> "RunTests"
-  ==> "All"
+//   ==> "DeployTestDB"
+//   ==> "BuildTests"
+//   ==> "RunTests"
+//   ==> "All"
 
 "All" 
   ==> "NuGet"

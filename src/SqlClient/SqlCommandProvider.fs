@@ -1,5 +1,7 @@
 ﻿namespace FSharp.Data
 
+#nowarn "101"
+
 open System
 open System.Data
 open System.IO
@@ -8,8 +10,8 @@ open System.Reflection
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 open System.Configuration
-open System.Runtime.Caching
 
+open System.Data.SqlClient
 open Microsoft.SqlServer.Server
 
 open Microsoft.FSharp.Core.CompilerServices
@@ -28,18 +30,17 @@ do()
 [<TypeProvider>]
 [<CompilerMessageAttribute("This API supports the FSharp.Data.SqlClient infrastructure and is not intended to be used directly from your code.", 101, IsHidden = true)>]
 type SqlCommandProvider(config : TypeProviderConfig) as this = 
-    inherit TypeProviderForNamespaces()
+    inherit TypeProviderForNamespaces(config)
 
     let nameSpace = this.GetType().Namespace
     let assembly = Assembly.LoadFrom( config.RuntimeAssembly)
-    let providerType = ProvidedTypeDefinition(assembly, nameSpace, "SqlCommandProvider", Some typeof<obj>, HideObjectMethods = true)
+    let providerType = ProvidedTypeDefinition(assembly, nameSpace, "SqlCommandProvider", Some typeof<obj>, hideObjectMethods = true)
 
-    let cache = new MemoryCache(name = this.GetType().Name)
+    let cache = new Cache<ProvidedTypeDefinition>()
 
     do 
         this.Disposing.Add <| fun _ ->
             try  
-                cache.Dispose()
                 clearDataTypesMap()
             with _ -> ()
 
@@ -132,7 +133,7 @@ type SqlCommandProvider(config : TypeProviderConfig) as this =
         let rank = if singleRow then ResultRank.SingleRow else ResultRank.Sequence
         let returnType = DesignTime.GetOutputTypes(outputColumns, resultType, rank, hasOutputParameters = false)
         
-        let cmdProvidedType = ProvidedTypeDefinition(assembly, nameSpace, typeName, Some typeof<``ISqlCommand Implementation``>, HideObjectMethods = true)
+        let cmdProvidedType = ProvidedTypeDefinition(assembly, nameSpace, typeName, Some typeof<``ISqlCommand Implementation``>, hideObjectMethods = true)
 
         do  
             match tempTableTypes with
@@ -143,7 +144,7 @@ type SqlCommandProvider(config : TypeProviderConfig) as this =
             | _ -> ()
 
         do
-            cmdProvidedType.AddMember(ProvidedProperty("ConnectionStringOrName", typeof<string>, [], IsStatic = true, GetterCode = fun _ -> <@@ connectionStringOrName @@>))
+            cmdProvidedType.AddMember(ProvidedProperty("ConnectionStringOrName", typeof<string>, isStatic = true, getterCode = fun _ -> <@@ connectionStringOrName @@>))
 
         do
             SharedLogic.alterReturnTypeAccordingToResultType returnType cmdProvidedType resultType
