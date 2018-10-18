@@ -1,15 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../fsc.props" />
   <PropertyGroup>
     <TargetFramework>net451</TargetFramework>
     <AssemblyName>SqlClient.Tests</AssemblyName>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
-  <ItemGroup>
+  <ItemGroup>    
     <Reference Include="FSharp.Data.SqlClient">
       <HintPath>..\..\bin\FSharp.Data.SqlClient.dll</HintPath>
-    </Reference>    
+    </Reference>
     <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Numerics" />

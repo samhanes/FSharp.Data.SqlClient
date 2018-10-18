@@ -18,18 +18,13 @@ open ProviderImplementation.ProvidedTypes
 
 open FSharp.Data.SqlClient
 
-type SqlEnumKind = 
-    | Default = 0
-    | CLI = 1
-    | UnitsOfMeasure = 2
-
 [<TypeProvider>]
 [<CompilerMessageAttribute("This API supports the FSharp.Data.SqlClient infrastructure and is not intended to be used directly from your code.", 101, IsHidden = true)>]
 type SqlEnumProvider(config : TypeProviderConfig) as this = 
-    inherit TypeProviderForNamespaces(config)
+    inherit TypeProviderForNamespaces (config, assemblyReplacementMap=[("FSharp.Data.SqlClient.DesignTime", "FSharp.Data.SqlClient")], addDefaultProbingLocation=true)
 
     let nameSpace = this.GetType().Namespace
-    let assembly = Assembly.LoadFrom( config.RuntimeAssembly)
+    let assembly = Assembly.GetExecutingAssembly()
     let providerType = ProvidedTypeDefinition(assembly, nameSpace, "SqlEnumProvider", Some typeof<obj>, hideObjectMethods = true, isErased = false)
     let tempAssembly = ProvidedAssembly()
     do tempAssembly.AddTypes [providerType]

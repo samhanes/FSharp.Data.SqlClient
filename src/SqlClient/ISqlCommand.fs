@@ -6,11 +6,10 @@ open System
 open System.Data
 open System.Data.SqlClient
 open System.Reflection
-open System.Configuration
-open System.Collections.Specialized
 
 open FSharp.Data.SqlClient
 open System.Linq
+
 
 [<CompilerMessageAttribute("This API supports the FSharp.Data.SqlClient infrastructure and is not intended to be used directly from your code.", 101, IsHidden = true)>]
 type ISqlCommand = 
@@ -33,13 +32,6 @@ module Seq =
         | _ -> invalidArg "source" "The input sequence contains more than one element."
 
 [<CompilerMessageAttribute("This API supports the FSharp.Data.SqlClient infrastructure and is not intended to be used directly from your code.", 101, IsHidden = true)>]
-[<RequireQualifiedAccess>]
-type ResultRank = 
-    | Sequence = 0
-    | SingleRow = 1
-    | ScalarValue = 2
-
-[<CompilerMessageAttribute("This API supports the FSharp.Data.SqlClient infrastructure and is not intended to be used directly from your code.", 101, IsHidden = true)>]
 type RowMapping = obj[] -> obj
 
 
@@ -59,7 +51,6 @@ type internal Connection = Choice<string, SqlConnection, SqlTransaction>
 
 [<CompilerMessageAttribute("This API supports the FSharp.Data.SqlClient infrastructure and is not intended to be used directly from your code.", 101, IsHidden = true)>]
 type ``ISqlCommand Implementation``(cfg: DesignTimeConfig, connection: Connection, commandTimeout) = 
-
     let cmd = new SqlCommand(cfg.SqlStatement, CommandTimeout = commandTimeout)
     let manageConnection = 
         match connection with
@@ -207,7 +198,7 @@ type ``ISqlCommand Implementation``(cfg: DesignTimeConfig, connection: Connectio
             elif p.Direction.HasFlag(ParameterDirection.Output) && value :? Array then
                 p.Size <- (value :?> Array).Length
 
-//Execute/AsyncExecute versions
+    //Execute/AsyncExecute versions
 
     static member internal VerifyResultsetColumns(cursor: SqlDataReader, expected) = 
         if Configuration.Current.ResultsetRuntimeVerification
@@ -335,6 +326,3 @@ type ``ISqlCommand Implementation``(cfg: DesignTimeConfig, connection: Connectio
             use _ = cmd.Connection.UseLocally(manageConnection )
             return! cmd.AsyncExecuteNonQuery() 
         }
-
-
-

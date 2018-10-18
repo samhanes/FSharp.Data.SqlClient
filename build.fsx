@@ -3,6 +3,7 @@
 // --------------------------------------------------------------------------------------
 
 #r @"packages/build/FAKE/tools/FakeLib.dll"
+open Fake.IO
 #load "tools/fakexunithelper.fsx" // helper for xunit 1 is gone, work around by having our own copy for now
 #load "tools/fakeiisexpress.fsx"  // helper for iisexpress is not ready, work around by having our own copy for now
 
@@ -64,7 +65,6 @@ let clientSlnPath = "SqlClient.sln"
 
 Target.create "Clean" (fun _ ->
     Shell.cleanDirs ["bin"; "temp"]
-    DotNet.exec dnDefault "clean" clientSlnPath |> ignore
 )
 
 Target.create "CleanDocs" (fun _ ->
@@ -85,9 +85,12 @@ Target.create "Build" (fun _ ->
     DotNet.restore 
         (fun args -> { args with NoCache = true } |> dnDefault)
         clientSlnPath
+    DotNet.exec dnDefault "clean" clientSlnPath |> ignore
     DotNet.build
-        (fun args -> { args with Configuration = DotNet.Debug; Framework = Some "netstandard2.0" } |> dnDefault)
+        (fun args -> { args with Configuration = DotNet.Debug } |> dnDefault)
         clientSlnPath
+    Shell.copyDir "bin" "src/SqlClient.DesignTime/bin/Debug/net451/" (fun _ -> true)
+    Shell.copyDir "bin" "src/SqlClient/bin/Debug/net451/" (fun _ -> true)
 )
 
 #r "System.Data"
@@ -242,13 +245,13 @@ Target.create "All" Target.DoNothing
 
 open Fake.Core.TargetOperators // for ==>
 
-"Clean"
-  ==> "AssemblyInfo"
+//"Clean"
+"AssemblyInfo"
   ==> "Build"
-//   ==> "DeployTestDB"
-//   ==> "BuildTests"
-//   ==> "RunTests"
-//   ==> "All"
+  ==> "DeployTestDB"
+  ==> "BuildTests"
+  ==> "RunTests"
+  ==> "All"
 
 "All" 
   ==> "NuGet"

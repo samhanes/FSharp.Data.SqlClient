@@ -1,24 +1,12 @@
 source https://www.nuget.org/api/v2/
-framework: >= net40, netstandard2.0
+framework: >= net451
 redirects: force
 generate_load_scripts: on
 
-nuget FSharp.Core = 4.1.18
+nuget FSharp.Core = 4.5.2
 nuget Microsoft.SqlServer.TransactSql.ScriptDom
 
-nuget NETStandard.Library
-nuget System.Configuration.ConfigurationManager
-nuget System.Console
-nuget System.Data.Common
-nuget System.Data.SqlClient
-nuget System.IO
-nuget System.Reflection
-nuget System.Reflection.TypeExtensions
-nuget System.Runtime
-nuget System.Runtime.Caching
-nuget System.Runtime.Loader
-nuget System.Runtime.Serialization.Primitives
-nuget System.Runtime.Serialization.Formatters
+//nuget System.Data.SqlClient
 
 github fsprojects/FSharp.TypeProviders.SDK:7d57cd409d7299592822713195924e42b2b7acde src/ProvidedTypes.fs
 github fsprojects/FSharp.TypeProviders.SDK:7d57cd409d7299592822713195924e42b2b7acde src/ProvidedTypes.fsi
@@ -26,7 +14,7 @@ github fsprojects/FSharp.TypeProviders.SDK:7d57cd409d7299592822713195924e42b2b7a
 
 group Build
 	source https://www.nuget.org/api/v2/
-	framework: >= net40
+	framework: >= net451
 	redirects: force
 	generate_load_scripts: on
 
@@ -41,10 +29,10 @@ group Build
 
 group Test
 	source https://www.nuget.org/api/v2/
-	framework: >= net40
+	framework: >= net451
 	redirects: force
 
-	nuget FSharp.Core = 4.1.18
+	nuget FSharp.Core = 4.5.2
 	nuget FSharp.Configuration = 1.4.0
 	nuget Newtonsoft.Json
 	nuget xunit = 1.9.2
@@ -53,7 +41,7 @@ group Test
 
 group Samples
 	source https://www.nuget.org/api/v2/
-	framework: >= net40
+	framework: >= net451
 	redirects: force
 
 	nuget Microsoft.AspNet.WebApi
