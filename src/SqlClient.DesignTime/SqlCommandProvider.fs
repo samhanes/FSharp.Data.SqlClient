@@ -3,16 +3,10 @@
 #nowarn "101"
 
 open System
-open System.Data
 open System.IO
 open System.Data.SqlClient
 open System.Reflection
-open System.Collections.Generic
 open System.Runtime.CompilerServices
-open System.Configuration
-
-open System.Data.SqlClient
-open Microsoft.SqlServer.Server
 
 open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Quotations
@@ -30,10 +24,10 @@ do()
 [<TypeProvider>]
 [<CompilerMessageAttribute("This API supports the FSharp.Data.SqlClient infrastructure and is not intended to be used directly from your code.", 101, IsHidden = true)>]
 type SqlCommandProvider(config : TypeProviderConfig) as this = 
-    inherit TypeProviderForNamespaces(config)
+    inherit TypeProviderForNamespaces (config, assemblyReplacementMap=[("FSharp.Data.SqlClient.DesignTime", "FSharp.Data.SqlClient")], addDefaultProbingLocation=true)
 
     let nameSpace = this.GetType().Namespace
-    let assembly = Assembly.LoadFrom( config.RuntimeAssembly)
+    let assembly = Assembly.GetExecutingAssembly()
     let providerType = ProvidedTypeDefinition(assembly, nameSpace, "SqlCommandProvider", Some typeof<obj>, hideObjectMethods = true)
 
     let cache = new Cache<ProvidedTypeDefinition>()

@@ -2,47 +2,12 @@
 module FSharp.Data.SqlClient.Extensions
 
 open System
-open System.Text
 open System.Data
 open System.Collections.Generic
 open System.IO
 open System.Threading.Tasks
 open System.Data.SqlClient
-open System.Reflection
-
-type SqlCommand with
-    member this.AsyncExecuteReader (behavior:CommandBehavior) = 
-        Async.AwaitTask(this.ExecuteReaderAsync(behavior))
-
-    member this.AsyncExecuteNonQuery() =
-        Async.AwaitTask(this.ExecuteNonQueryAsync())
-
-    static member internal DefaultTimeout = (new SqlCommand()).CommandTimeout
-
-    member internal this.ExecuteQuery mapper = 
-        seq {
-            use cursor = this.ExecuteReader()
-            while cursor.Read() do
-                yield mapper cursor
-        }
-
-type SqlDataReader with
-    member internal this.MapRowValues<'TItem>( rowMapping) = 
-        seq {
-            use _ = this
-            let values = Array.zeroCreate this.FieldCount
-            while this.Read() do
-                this.GetValues(values) |> ignore
-                yield values |> rowMapping |> unbox<'TItem>
-        }
-
-type SqlDataReader with
-    member internal this.TryGetValue(name: string) = 
-        let value = this.[name] 
-        if Convert.IsDBNull value then None else Some(unbox<'a> value)
-    member internal this.GetValueOrDefault<'a>(name: string, defaultValue) = 
-        let value = this.[name] 
-        if Convert.IsDBNull value then defaultValue else unbox<'a> value
+open FSharp.Data
 
 let DbNull = box DBNull.Value
 
@@ -287,24 +252,12 @@ type SqlConnection with
 
  //address an issue when regular Dispose on SqlConnection needed for async computation 
  //wipes out all properties like ConnectionString in addition to closing connection to db
-    member this.UseLocally(?privateConnection) =
-        if this.State = ConnectionState.Closed 
-            && defaultArg privateConnection true
-        then 
-            this.Open()
-            { new IDisposable with member __.Dispose() = this.Close() }
-        else { new IDisposable with member __.Dispose() = () }
-    
+   
     member internal this.CheckVersion() = 
         assert (this.State = ConnectionState.Open)
         let majorVersion = this.ServerVersion.Split('.').[0]
         if int majorVersion < 11 
         then failwithf "Minimal supported major version is 11 (SQL Server 2012 and higher or Azure SQL Database). Currently used: %s" this.ServerVersion
-
-    member this.IsSqlAzure = 
-        assert (this.State = ConnectionState.Open)
-        use cmd = new SqlCommand("SELECT SERVERPROPERTY('edition')", this)
-        cmd.ExecuteScalar().Equals("SQL Azure")
 
     member internal this.GetUserSchemas() = 
         use __ = this.UseLocally()

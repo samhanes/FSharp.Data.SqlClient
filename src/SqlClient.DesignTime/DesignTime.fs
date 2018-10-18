@@ -11,32 +11,9 @@ open System.Collections.Generic
 open System.Diagnostics
 open Microsoft.FSharp.Quotations
 open ProviderImplementation.ProvidedTypes
-open ProviderImplementation.ProvidedTypes.UncheckedQuotations
 open FSharp.Data
 open FSharp.Data.SqlClient.Extensions
 open System.Text.RegularExpressions
-
-module RuntimeInternals =
-    let setupTableFromSerializedColumns (serializedSchema: string) (table: System.Data.DataTable) =
-        let primaryKey = ResizeArray()
-        for line in serializedSchema.Split('\n') do
-            let xs = line.Split('\t')
-            let col = new DataColumn()
-            col.ColumnName <- xs.[0]
-            col.DataType <- Type.GetType( xs.[1], throwOnError = true)  
-            col.AllowDBNull <- Boolean.Parse xs.[2]
-            if col.DataType = typeof<string>
-            then 
-                col.MaxLength <- int xs.[3]
-            col.ReadOnly <- Boolean.Parse xs.[4]
-            col.AutoIncrement <- Boolean.Parse xs.[5]
-            if Boolean.Parse xs.[6]
-            then    
-                primaryKey.Add col 
-            table.Columns.Add col
-
-        table.PrimaryKey <- Array.ofSeq primaryKey
-
 
 type internal RowType = {
     Provided: Type
@@ -433,7 +410,7 @@ type DesignTime private() =
                     providedType, erasedToTupleType, mapping
             
             let nullsToOptions = QuotationsFactory.MapArrayNullableItems(outputColumns, "MapArrayObjItemToOption") 
-            let combineWithNullsToOptions = typeof<QuotationsFactory>.GetMethod("GetMapperWithNullsToOptions") 
+            let combineWithNullsToOptions = typeof<Mapper>.GetMethod("GetMapperWithNullsToOptions") 
             
             { 
                 Single = 
