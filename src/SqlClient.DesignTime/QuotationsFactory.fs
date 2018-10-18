@@ -50,7 +50,7 @@ type QuotationsFactory private() =
             x
         @@>
 
-    static member internal OptionToObj<'T> value = <@@ match %%value with Some (x : 'T) -> box x | None -> Extensions.DbNull @@>    
+    static member internal OptionToObj<'T> value = <@@ match %%value with Some (x : 'T) -> box x | None -> DbNull @@>    
         
     static member internal MapArrayOptionItemToObj<'T>(arr, index) =
         <@

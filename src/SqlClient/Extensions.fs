@@ -6,6 +6,7 @@ open System.Data.SqlClient
 
 [<AutoOpen>]
 module Extensions =
+
     type SqlDataReader with
         member internal this.MapRowValues<'TItem>( rowMapping) = 
             seq {

@@ -17,7 +17,7 @@ open ProviderImplementation.ProvidedTypes
 
 [<assembly:TypeProviderAssembly()>]
 #if DEBUG
-[<assembly:InternalsVisibleTo("SqlClient.Tests")>]
+[<assembly:InternalsVisibleTo("SqlClient.DesignTime.Tests")>]
 #endif
 do()
 

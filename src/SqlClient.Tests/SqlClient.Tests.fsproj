@@ -8,9 +8,6 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>    
-    <Reference Include="FSharp.Data.SqlClient.DesignTime">
-      <HintPath>..\..\bin\FSharp.Data.SqlClient.DesignTime.dll</HintPath>
-    </Reference>
     <Reference Include="FSharp.Data.SqlClient">
       <HintPath>..\..\bin\FSharp.Data.SqlClient.dll</HintPath>
     </Reference>

@@ -27,8 +27,8 @@
       <Paket>True</Paket>
       <Link>ProvidedTypes.fs</Link>
     </Compile>
-    <Compile Include="../SqlClient/Shared.fs" />
     <Compile Include="../SqlClient/Extensions.fs" />
+    <Compile Include="../SqlClient/Shared.fs" />
     <Compile Include="../SqlClient/Configuration.fs" />
     <Compile Include="../SqlClient/DataTable.fs" />    
     <Compile Include="../SqlClient/DynamicRecord.fs" />
