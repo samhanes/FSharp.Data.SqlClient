@@ -124,7 +124,7 @@ type ``ISqlCommand Implementation``(cfg: DesignTimeConfig, connection: Connectio
 
         | unexpected -> failwithf "Unexpected ResultType value: %O" unexpected
 
-    member this.CommandTimeout = cmd.CommandTimeout
+    member this.CommandTimeout = cmd.CommandTimeout |> box
 
     interface ISqlCommand with
 
@@ -217,6 +217,8 @@ type ``ISqlCommand Implementation``(cfg: DesignTimeConfig, connection: Connectio
                     let message = sprintf """Expected column [%s] of type "%A" at position %i (0-based indexing) but received column [%s] of type "%A".""" expectedName expectedType i actualName actualType
                     cursor.Close()
                     invalidOp message
+
+    //static member internal GetCommandTimeout(cmd:SqlCommand) = cmd.CommandTimeout
 
     static member internal ExecuteReader(cmd, getReaderBehavior, parameters, expectedDataReaderColumns) = 
         ``ISqlCommand Implementation``.SetParameters(cmd, parameters)

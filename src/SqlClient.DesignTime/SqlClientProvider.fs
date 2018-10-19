@@ -11,6 +11,7 @@ open System.IO
 open System.Reflection
 open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Quotations
+open Microsoft.SqlServer.Types
 
 open ProviderImplementation.ProvidedTypes
 
@@ -21,6 +22,7 @@ open FSharp.Data.SqlClient
 type SqlProgrammabilityProvider(config : TypeProviderConfig) as this = 
     inherit TypeProviderForNamespaces (config, assemblyReplacementMap=[("FSharp.Data.SqlClient.DesignTime", "FSharp.Data.SqlClient")], addDefaultProbingLocation=true)
 
+    let geoNull = SqlGeography.Null // this feels dirty - but GetReferencedAssemblies on design time dll does not include Microsoft.SqlServer.Types without this
     let assembly = Assembly.GetExecutingAssembly()
     let nameSpace = this.GetType().Namespace
     let providerType = ProvidedTypeDefinition(assembly, nameSpace, "SqlProgrammabilityProvider", Some typeof<obj>, hideObjectMethods = true)

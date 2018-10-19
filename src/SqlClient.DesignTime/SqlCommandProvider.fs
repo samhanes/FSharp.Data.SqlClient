@@ -73,12 +73,33 @@ type SqlCommandProvider(config : TypeProviderConfig) as this =
 
         this.AddNamespace(nameSpace, [ providerType ])
 
-    override this.ResolveAssembly args = 
-        config.ReferencedAssemblies 
-        |> Array.tryFind (fun x -> AssemblyName.ReferenceMatchesDefinition(AssemblyName.GetAssemblyName x, AssemblyName args.Name)) 
-        |> Option.map Assembly.LoadFrom
-        |> defaultArg 
-        <| base.ResolveAssembly args
+    override __.ResolveAssembly(args) = 
+        let assemblies = 
+            config.ReferencedAssemblies 
+            |> Seq.choose (fun asm -> 
+                try
+                    asm |> (IO.File.ReadAllBytes >> Assembly.Load >> Some)
+                with 
+                | _ -> None)
+            |> Array.ofSeq
+
+        let name = System.Reflection.AssemblyName(args.Name)
+        let existingAssembly = 
+            System.AppDomain.CurrentDomain.GetAssemblies()
+            |> Seq.append assemblies
+            |> Seq.tryFind(fun a -> System.Reflection.AssemblyName.ReferenceMatchesDefinition(name, a.GetName()))
+        match existingAssembly with
+        | Some a -> a
+        | None -> 
+            // Fallback to default behavior
+        base.ResolveAssembly(args)
+
+    // override this.ResolveAssembly args = 
+    //     config.ReferencedAssemblies 
+    //     |> Array.tryFind (fun x -> AssemblyName.ReferenceMatchesDefinition(AssemblyName.GetAssemblyName x, AssemblyName args.Name)) 
+    //     |> Option.map Assembly.LoadFrom
+    //     |> defaultArg 
+    //     <| base.ResolveAssembly args
 
     member internal this.CreateRootType(typeName, sqlStatement, connectionStringOrName: string, resultType, singleRow, configFile, allParametersOptional, dataDirectory, tempTableDefinitions, tableVarMapping) = 
 
