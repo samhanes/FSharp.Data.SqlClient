@@ -1,5 +1,7 @@
 module FSharp.Data.CreateCommandTest
 
+#nowarn "101"
+
 open Xunit
 
 type DB = FSharp.Data.ProgrammabilityTest.AdventureWorks

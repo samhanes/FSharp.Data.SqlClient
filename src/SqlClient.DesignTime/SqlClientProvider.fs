@@ -313,7 +313,7 @@ type SqlProgrammabilityProvider(config : TypeProviderConfig) as this =
                             let name, dataType = c.Name, c.TypeInfo.ClrType
                             if c.Nullable 
                             then
-                                let propertType = typedefof<_ option>.MakeGenericType dataType
+                                let propertType = ProvidedTypeBuilder.MakeGenericType(typedefof<_ option>, [dataType]) //typedefof<_ option>.MakeGenericType dataType
                                 ProvidedProperty(name, 
                                     propertType, 
                                     getterCode = QuotationsFactory.GetBody("GetNullableValueFromDataRow", dataType, name), 
@@ -364,7 +364,7 @@ type SqlProgrammabilityProvider(config : TypeProviderConfig) as this =
                                     let dataType = c.TypeInfo.ClrType
                                     let parameter = 
                                         if c.NullableParameter
-                                        then ProvidedParameter(c.Name, parameterType = typedefof<_ option>.MakeGenericType dataType, optionalValue = null)
+                                        then ProvidedParameter(c.Name, parameterType = ProvidedTypeBuilder.MakeGenericType(typedefof<_ option>, [dataType]), optionalValue = null)
                                         else ProvidedParameter(c.Name, dataType)
 
                                     yield parameter, c
@@ -505,12 +505,19 @@ type SqlProgrammabilityProvider(config : TypeProviderConfig) as this =
                         addRedirectToISqlCommandMethod typeof<string> "ToTraceString" 
 
                     commands.AddMember cmdProvidedType
-                    // if resultType = ResultType.DataTable then
-                    //     // if we don't do this, we get a compile error
-                    //     // Error The type provider 'FSharp.Data.SqlProgrammabilityProvider' reported an error: type 'Table' was not added as a member to a declaring type <type instanciation name> 
-                    //     cmdProvidedType.AddMember( returnType.Single) 
-                    // else
-                    //     returnType.PerRow |> Option.iter (fun x -> cmdProvidedType.AddMember x.Provided)
+                    if resultType = ResultType.DataTable then
+                        // if we don't do this, we get a compile error
+                        // Error The type provider 'FSharp.Data.SqlProgrammabilityProvider' reported an error: type 'Table' was not added as a member to a declaring type <type instanciation name>                         
+
+                        // try: only add provided types here?
+                        returnType.Single |> function 
+                            | :? ProvidedTypeDefinition -> cmdProvidedType.AddMember returnType.Single 
+                            | _ -> ()
+                    else                        
+                        returnType.PerRow |> Option.iter (fun x -> 
+                            x.Provided |> function 
+                                | :? ProvidedTypeDefinition -> cmdProvidedType.AddMember x.Provided 
+                                | _ -> ())
 
                     let designTimeConfig = 
                         let expectedDataReaderColumns = 
