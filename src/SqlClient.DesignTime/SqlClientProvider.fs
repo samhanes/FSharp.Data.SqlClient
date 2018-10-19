@@ -505,12 +505,12 @@ type SqlProgrammabilityProvider(config : TypeProviderConfig) as this =
                         addRedirectToISqlCommandMethod typeof<string> "ToTraceString" 
 
                     commands.AddMember cmdProvidedType
-                    if resultType = ResultType.DataTable then
-                        // if we don't do this, we get a compile error
-                        // Error The type provider 'FSharp.Data.SqlProgrammabilityProvider' reported an error: type 'Table' was not added as a member to a declaring type <type instanciation name> 
-                        cmdProvidedType.AddMember( returnType.Single) 
-                    else
-                        returnType.PerRow |> Option.iter (fun x -> cmdProvidedType.AddMember x.Provided)
+                    // if resultType = ResultType.DataTable then
+                    //     // if we don't do this, we get a compile error
+                    //     // Error The type provider 'FSharp.Data.SqlProgrammabilityProvider' reported an error: type 'Table' was not added as a member to a declaring type <type instanciation name> 
+                    //     cmdProvidedType.AddMember( returnType.Single) 
+                    // else
+                    //     returnType.PerRow |> Option.iter (fun x -> cmdProvidedType.AddMember x.Provided)
 
                     let designTimeConfig = 
                         let expectedDataReaderColumns = 
