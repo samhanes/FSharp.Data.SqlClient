@@ -5,10 +5,7 @@
 open System.Reflection
 open System.Collections.Generic
 open System.Data
-open System.Data.Common
 open System
-open System.IO
-open System.Configuration
 
 open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Quotations
@@ -24,11 +21,7 @@ type SqlEnumProvider(config : TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces (config, assemblyReplacementMap=[("FSharp.Data.SqlClient.DesignTime", "FSharp.Data.SqlClient")], addDefaultProbingLocation=true)
 
     let nameSpace = this.GetType().Namespace
-    let assembly = Assembly.GetExecutingAssembly()
-    let providerType = ProvidedTypeDefinition(assembly, nameSpace, "SqlEnumProvider", Some typeof<obj>, hideObjectMethods = true, isErased = false)
-    let tempAssembly = ProvidedAssembly()
-    do tempAssembly.AddTypes [providerType]
-
+    let asm = ProvidedAssembly()
     let cache = new Cache<ProvidedTypeDefinition>()
 
     static let allowedTypesForEnum = 
@@ -41,36 +34,8 @@ type SqlEnumProvider(config : TypeProviderConfig) as this =
         xs.UnionWith( allowedTypesForEnum)
         xs
 
-    do 
-        providerType.DefineStaticParameters(
-            parameters = [ 
-                ProvidedStaticParameter("Query", typeof<string>) 
-                ProvidedStaticParameter("ConnectionStringOrName", typeof<string>) 
-                ProvidedStaticParameter("Provider", typeof<string>, "System.Data.SqlClient") 
-                ProvidedStaticParameter("ConfigFile", typeof<string>, "") 
-                ProvidedStaticParameter("Kind", typeof<SqlEnumKind>, SqlEnumKind.Default) 
-            ],             
-            instantiationFunction = (fun typeName args ->   
-                cache.GetOrAdd(typeName, lazy this.CreateRootType(typeName, unbox args.[0], unbox args.[1], unbox args.[2], unbox args.[3], unbox args.[4]))
-            )        
-        )
-
-        providerType.AddXmlDoc """
-<summary>Enumeration based on SQL query.</summary> 
-<param name='Query'>SQL used to get the enumeration labels and values. A result set must have at least two columns. The first one is a label.</param>
-<param name='ConnectionString'>String used to open a data connection.</param>
-<param name='Provider'>Invariant name of a ADO.NET provider. Default is "System.Data.SqlClient".</param>
-<param name='ConfigFile'>The name of the configuration file that’s used for connection strings at DESIGN-TIME. The default value is app.config or web.config.</param>
-<param name='Kind'></param>
-"""
-
-        this.AddNamespace( nameSpace, [ providerType ])
-    
-    member internal this.CreateRootType( typeName, query, connectionStringOrName, provider, configFile, kind: SqlEnumKind) = 
-        let tempAssembly = ProvidedAssembly()
-
-        let providedEnumType = ProvidedTypeDefinition(assembly, nameSpace, typeName, baseType = Some typeof<obj>, hideObjectMethods = true, isErased = false)
-        tempAssembly.AddTypes [ providedEnumType ]
+    let createEnumType typeName query connectionStringOrName provider configFile (kind: SqlEnumKind) = 
+        let providedEnumType = ProvidedTypeDefinition(asm, nameSpace, typeName, baseType = Some typeof<obj>, hideObjectMethods = true, isErased = false)
         
         let connStr, providerName = 
             match DesignTimeConnectionString.Parse(connectionStringOrName, config.ResolutionFolder, configFile) with
@@ -148,7 +113,6 @@ type SqlEnumProvider(config : TypeProviderConfig) as this =
 
         match kind with 
         | SqlEnumKind.CLI ->
-
             if not( allowedTypesForEnum.Contains( valueType))
             then failwithf "Enumerated types can only have one of the following underlying types: %A." [| for t in allowedTypesForEnum -> t.Name |]
 
@@ -160,7 +124,6 @@ type SqlEnumProvider(config : TypeProviderConfig) as this =
             |> providedEnumType.AddMembers
 
         | SqlEnumKind.UnitsOfMeasure ->
-
             for name in names do
                 let units = ProvidedTypeDefinition( name, None, isErased = false)
                 units.AddCustomAttribute { 
@@ -288,10 +251,42 @@ type SqlEnumProvider(config : TypeProviderConfig) as this =
 
                 providedEnumType.AddMember tryGetName
 
+        asm.AddTypes [ providedEnumType ]
         providedEnumType
 
-    //Quotation factories
+    let providerType = 
+        let pt = ProvidedTypeDefinition(asm, nameSpace, "SqlEnumProvider", Some typeof<obj>, hideObjectMethods = true, isErased = false) 
+        pt.DefineStaticParameters(
+            parameters = [ 
+                ProvidedStaticParameter("Query", typeof<string>) 
+                ProvidedStaticParameter("ConnectionStringOrName", typeof<string>) 
+                ProvidedStaticParameter("Provider", typeof<string>, "System.Data.SqlClient") 
+                ProvidedStaticParameter("ConfigFile", typeof<string>, "") 
+                ProvidedStaticParameter("Kind", typeof<SqlEnumKind>, SqlEnumKind.Default) 
+            ],             
+            instantiationFunction = (fun typeName args ->   
+                let enumType = cache.GetOrAdd(typeName, lazy (createEnumType typeName (unbox args.[0]) (unbox args.[1]) (unbox args.[2]) (unbox args.[3]) (unbox args.[4])))
+                let asm = ProvidedAssembly()
+                asm.AddTypes [enumType]
+                enumType
+            )        
+        )
+
+        pt.AddXmlDoc """
+<summary>Enumeration based on SQL query.</summary> 
+<param name='Query'>SQL used to get the enumeration labels and values. A result set must have at least two columns. The first one is a label.</param>
+<param name='ConnectionString'>String used to open a data connection.</param>
+<param name='Provider'>Invariant name of a ADO.NET provider. Default is "System.Data.SqlClient".</param>
+<param name='ConfigFile'>The name of the configuration file that’s used for connection strings at DESIGN-TIME. The default value is app.config or web.config.</param>
+<param name='Kind'></param>
+"""
+        pt
+
+    do
+        this.AddNamespace( nameSpace, [ providerType ])   
     
+
+    //Quotation factories    
     static member internal GetTryParseImpl<'Value> items = 
         fun (args: _ list) ->
             <@@

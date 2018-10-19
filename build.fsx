@@ -87,7 +87,7 @@ Target.create "Build" (fun _ ->
         clientSlnPath
     DotNet.exec dnDefault "clean" clientSlnPath |> ignore
     DotNet.build
-        (fun args -> { args with Configuration = DotNet.Debug } |> dnDefault)
+        (fun args -> { args with Configuration = DotNet.Debug } |> dnDefault) // ; Common = { DotNet.Options.Default with CustomParams = Some "--no-restore" }
         clientSlnPath
     Shell.copyDir "bin" "src/SqlClient.DesignTime/bin/Debug/net451/" (fun _ -> true)
     Shell.copyDir "bin" "src/SqlClient/bin/Debug/net451/" (fun _ -> true)

@@ -4,6 +4,7 @@ open System
 open System.Data
 open System.Collections.Generic
 open System.Data.SqlClient
+open ProviderImplementation.ProvidedTypes
 
 ///<summary>Enum describing output type</summary>
 type ResultType =
@@ -50,7 +51,7 @@ type Column = {
 }   with
     member this.ErasedToType = 
         if this.Nullable
-        then typedefof<_ option>.MakeGenericType this.TypeInfo.ClrType
+        then ProvidedTypeBuilder.MakeGenericType(typedefof<_ option>, [this.TypeInfo.ClrType])
         else this.TypeInfo.ClrType
     
     member this.GetProvidedType(?unitsOfMeasurePerSchema: Dictionary<string, ProviderImplementation.ProvidedTypes.ProvidedTypeDefinition list>) = 
@@ -66,7 +67,7 @@ type Column = {
         if this.Nullable
         then
             //ProviderImplementation.ProvidedTypes.ProvidedTypeBuilder.MakeGenericType(typedefof<_ option>, [ typeConsideringUOM ])
-            typedefof<_ option>.MakeGenericType typeConsideringUOM
+            ProvidedTypeBuilder.MakeGenericType(typedefof<_ option>, [typeConsideringUOM])
         else 
             typeConsideringUOM
 
