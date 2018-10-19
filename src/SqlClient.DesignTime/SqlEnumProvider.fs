@@ -24,10 +24,15 @@ type SqlEnumProvider(config : TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces (config, assemblyReplacementMap=[("FSharp.Data.SqlClient.DesignTime", "FSharp.Data.SqlClient")], addDefaultProbingLocation=true)
 
     let nameSpace = this.GetType().Namespace
-    let assembly = Assembly.GetExecutingAssembly()
-    let providerType = ProvidedTypeDefinition(assembly, nameSpace, "SqlEnumProvider", Some typeof<obj>, hideObjectMethods = true, isErased = false)
-    let tempAssembly = ProvidedAssembly()
-    do tempAssembly.AddTypes [providerType]
+    //let assembly = Assembly.GetExecutingAssembly()
+    
+    //let providerType = ProvidedTypeDefinition(assembly, nameSpace, "SqlEnumProvider", Some typeof<obj>, hideObjectMethods = true, isErased = false)
+
+    //let tempAssembly = ProvidedAssembly()
+    //do tempAssembly.AddTypes [providerType]
+
+    let myAssem = ProvidedAssembly()
+    let providerType = ProvidedTypeDefinition(myAssem, nameSpace, "SqlEnumProvider", Some typeof<obj>, hideObjectMethods = true, isErased = false)
 
     let cache = new Cache<ProvidedTypeDefinition>()
 
@@ -67,10 +72,10 @@ type SqlEnumProvider(config : TypeProviderConfig) as this =
         this.AddNamespace( nameSpace, [ providerType ])
     
     member internal this.CreateRootType( typeName, query, connectionStringOrName, provider, configFile, kind: SqlEnumKind) = 
-        let tempAssembly = ProvidedAssembly()
+        //let tempAssembly = ProvidedAssembly()
 
-        let providedEnumType = ProvidedTypeDefinition(assembly, nameSpace, typeName, baseType = Some typeof<obj>, hideObjectMethods = true, isErased = false)
-        tempAssembly.AddTypes [ providedEnumType ]
+        let providedEnumType = ProvidedTypeDefinition(myAssem, nameSpace, typeName, baseType = Some typeof<obj>, hideObjectMethods = true, isErased = false)
+        //tempAssembly.AddTypes [ providedEnumType ]
         
         let connStr, providerName = 
             match DesignTimeConnectionString.Parse(connectionStringOrName, config.ResolutionFolder, configFile) with
