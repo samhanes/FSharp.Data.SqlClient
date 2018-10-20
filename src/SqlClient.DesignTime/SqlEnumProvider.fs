@@ -265,7 +265,10 @@ type SqlEnumProvider(config : TypeProviderConfig) as this =
                 ProvidedStaticParameter("Kind", typeof<SqlEnumKind>, SqlEnumKind.Default) 
             ],             
             instantiationFunction = (fun typeName args ->   
-                cache.GetOrAdd(typeName, lazy (createEnumType typeName (unbox args.[0]) (unbox args.[1]) (unbox args.[2]) (unbox args.[3]) (unbox args.[4])))
+                let enumType = cache.GetOrAdd(typeName, lazy (createEnumType typeName (unbox args.[0]) (unbox args.[1]) (unbox args.[2]) (unbox args.[3]) (unbox args.[4])))
+                let asm = ProvidedAssembly()
+                asm.AddTypes [enumType]
+                enumType
             )        
         )
 
