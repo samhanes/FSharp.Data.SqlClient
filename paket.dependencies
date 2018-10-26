@@ -1,5 +1,5 @@
 source https://www.nuget.org/api/v2/
-framework: >= net40, netstandard2.0
+framework: >= net451, netstandard2.0
 redirects: force
 generate_load_scripts: on
 
@@ -15,20 +15,23 @@ group Netstandard
 	framework: netstandard2.0
 	redirects: force
 
+	nuget FSharp.Core = 4.1.18
 	nuget System.Data.SqlClient
 
 group DesignTime
 	source https://www.nuget.org/api/v2/
-	framework: net40
+	framework: net451
 	redirects: force
 
 	nuget FSharp.Core = 4.1.18
 	nuget Microsoft.SqlServer.TransactSql.ScriptDom
 	nuget Microsoft.SqlServer.Types ~> 12
 
+	nuget System.Data.SqlClient
+
 group Build
 	source https://www.nuget.org/api/v2/
-	framework: >= net40
+	framework: >= net451
 	redirects: force
 	generate_load_scripts: on
 
@@ -43,7 +46,7 @@ group Build
 
 group Test
 	source https://www.nuget.org/api/v2/
-	framework: >= net40
+	framework: >= net451
 	redirects: force
 
 	nuget FSharp.Core = 4.1.18
