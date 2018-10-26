@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Microsoft.NET.Sdk">   
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net40;netstandard2.0</TargetFrameworks>
     <AssemblyName>FSharp.Data.SqlClient</AssemblyName>
@@ -37,5 +37,12 @@
     <Compile Include="ISqlCommand.fs" />
     <Compile Include="Runtime.fs" />
   </ItemGroup>
+  <Target Name="CopyDesignTimeAssemblies" AfterTargets="Build" Condition="$(TargetFramework) == 'net40' Or $(TargetFramework) == 'netstandard2.0'">
+    <ItemGroup>
+      <DesignTimeAssemblies Include="..\SqlClient.DesignTime\bin\$(Configuration)\net40\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(DesignTimeAssemblies)" DestinationFolder="..\..\bin\typeproviders\fsharp41\$(TargetFramework)" />
+    <Copy SourceFiles="@(DesignTimeAssemblies)" DestinationFolder="..\..\bin\$(TargetFramework)" />
+  </Target>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

@@ -6,7 +6,6 @@
     <AssemblyName>FSharp.Data.SqlClient.DesignTime</AssemblyName>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <OutputPath>..\..\bin</OutputPath>
     <NoWarn>101</NoWarn>
   </PropertyGroup>
   <ItemGroup>
