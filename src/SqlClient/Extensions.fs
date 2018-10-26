@@ -27,12 +27,20 @@ module Extensions =
 
     type SqlCommand with
         member this.AsyncExecuteReader (behavior:CommandBehavior) = 
-            Async.FromBeginEnd((fun(callback, state) -> this.BeginExecuteReader(callback, state, behavior)), this.EndExecuteReader)
+            #if NET40
+            Async.FromBeginEnd((fun(callback, state) -> this.BeginExecuteReader(callback, state, behavior)), this.EndExecuteReader)            
+            #else
+            Async.AwaitTask(this.ExecuteReaderAsync(behavior))
+            #endif
             // Async.AwaitTask(this.ExecuteReaderAsync(behavior))
             // can change back when we move to netstandard? - or possibly an #if here?
 
         member this.AsyncExecuteNonQuery() =
-            Async.FromBeginEnd(this.BeginExecuteNonQuery, this.EndExecuteNonQuery) 
+            #if NET40
+            Async.FromBeginEnd(this.BeginExecuteNonQuery, this.EndExecuteNonQuery)
+            #else
+            Async.AwaitTask(this.ExecuteNonQueryAsync())            
+            #endif
             //Async.AwaitTask(this.ExecuteNonQueryAsync())
             // see above
 

@@ -1,6 +1,5 @@
-﻿FSharp.Core
-
-group Test
+﻿group Test
+	FSharp.Core
 	xunit
 	xunit.runner.visualstudio
 	FSharp.Configuration
