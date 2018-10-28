@@ -425,15 +425,20 @@ NUGET
 
 GROUP DesignTime
 REDIRECTS: FORCE
-RESTRICTION: == net451
+RESTRICTION: == net461
 NUGET
   remote: https://www.nuget.org/api/v2
     FSharp.Core (4.1.18)
     Microsoft.SqlServer.TransactSql.ScriptDom (14.0.3811.1)
     Microsoft.SqlServer.Types (12.0.5000)
-    System.Data.Common (4.3)
+    System.Configuration.ConfigurationManager (4.5)
+      System.Security.Permissions (>= 4.5)
     System.Data.SqlClient (4.5.1)
-      System.Data.Common (>= 4.3)
+    System.Security.AccessControl (4.5)
+      System.Security.Principal.Windows (>= 4.5)
+    System.Security.Permissions (4.5)
+      System.Security.AccessControl (>= 4.5)
+    System.Security.Principal.Windows (4.5.1)
 
 GROUP Netstandard
 REDIRECTS: FORCE

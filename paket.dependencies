@@ -20,7 +20,7 @@ group Netstandard
 
 group DesignTime
 	source https://www.nuget.org/api/v2/
-	framework: net451
+	framework: net461
 	redirects: force
 
 	nuget FSharp.Core = 4.1.18
@@ -28,6 +28,7 @@ group DesignTime
 	nuget Microsoft.SqlServer.Types ~> 12
 
 	nuget System.Data.SqlClient
+	nuget System.Configuration.ConfigurationManager
 
 group Build
 	source https://www.nuget.org/api/v2/

@@ -6,3 +6,4 @@ group DesignTime
     Microsoft.SqlServer.TransactSql.ScriptDom
     Microsoft.SqlServer.Types
     System.Data.SqlClient
+    System.Configuration.ConfigurationManager
