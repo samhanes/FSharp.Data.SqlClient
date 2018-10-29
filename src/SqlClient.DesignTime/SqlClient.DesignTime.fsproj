@@ -2,12 +2,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\netfx.props" />
   <PropertyGroup>
-    <TargetFrameworks>net461</TargetFrameworks>
+    <TargetFrameworks>net40;net461</TargetFrameworks>
     <AssemblyName>FSharp.Data.SqlClient.DesignTime</AssemblyName>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <OutputPath>..\..\bin\typeproviders\fsharp41</OutputPath>
     <NoWarn>101</NoWarn>
   </PropertyGroup>
+  <ItemGroup Condition="$(TargetFramework) == 'net40'">
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Data" />
+  </ItemGroup>
   <ItemGroup>
     <Reference Include="System.IdentityModel" />
     <Reference Include="System.ServiceModel" />
@@ -47,6 +52,6 @@
     <None Include="Scripts\ReverseLineOrderForNotex.fsx" />
     <None Include="Scripts\XE.fsx" />
     <None Include="paket.references" />
-  </ItemGroup>
+  </ItemGroup>  
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>
