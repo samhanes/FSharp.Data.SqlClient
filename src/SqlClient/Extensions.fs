@@ -32,8 +32,6 @@ module Extensions =
             #else
             Async.AwaitTask(this.ExecuteReaderAsync(behavior))
             #endif
-            // Async.AwaitTask(this.ExecuteReaderAsync(behavior))
-            // can change back when we move to netstandard? - or possibly an #if here?
 
         member this.AsyncExecuteNonQuery() =
             #if NET40
@@ -41,8 +39,6 @@ module Extensions =
             #else
             Async.AwaitTask(this.ExecuteNonQueryAsync())            
             #endif
-            //Async.AwaitTask(this.ExecuteNonQueryAsync())
-            // see above
 
         static member internal DefaultTimeout = (new SqlCommand()).CommandTimeout
 
